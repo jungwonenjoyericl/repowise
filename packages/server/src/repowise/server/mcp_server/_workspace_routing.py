@@ -173,17 +173,15 @@ def _miss_hint(target: str) -> str:
         return _MISS_HINT
     head, sep, rest = _LINE_SUFFIX_RE.sub("", target).partition(":")
     head = head.strip()
-    if (
-        not head
-        or not sep
-        or not rest
-        or rest.startswith(":")
-        or head.casefold() in _TARGET_KINDS
-        or "/" in head
-        or "\\" in head
-        or Path(target).is_absolute()
-        or PureWindowsPath(target).drive
-    ):
+    if not head or not sep or not rest:
+        return _MISS_HINT
+    # Symbol references and target kinds are not repository prefixes.
+    if rest.startswith(":") or head.casefold() in _TARGET_KINDS:
+        return _MISS_HINT
+    # A path separator or Windows drive identifies a filesystem path.
+    if "/" in head or "\\" in head:
+        return _MISS_HINT
+    if Path(target).is_absolute() or PureWindowsPath(target).drive:
         return _MISS_HINT
     aliases = registry.get_all_aliases()
     if head.casefold() in {alias.casefold() for alias in aliases}:
